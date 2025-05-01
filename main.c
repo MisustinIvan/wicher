@@ -125,8 +125,8 @@ int schedule(int delay_seconds) {
 }
 
 int main(int argc, char* argv[]) {
-    if (argc != 3) {
-        printf("Usage: %s [directory] [delay]\n", argv[0]);
+    if (argc != 4) {
+        printf("Usage: %s [directory] [delay] [mode:normal/daemon]\n", argv[0]);
         return EXIT_FAILURE;
     }
 
@@ -137,9 +137,11 @@ int main(int argc, char* argv[]) {
 
     atexit(cleanup);
 
-    if (daemon(0, 0) == -1) {
-        perror("daemon failed\n");
-        exit(EXIT_FAILURE);
+    if (strcmp(argv[3], "daemon") == 0) {
+        if (daemon(0, 0) == -1) {
+            perror("daemon failed\n");
+            exit(EXIT_FAILURE);
+        }
     }
 
     int delay;

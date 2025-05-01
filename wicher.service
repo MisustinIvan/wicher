@@ -1,0 +1,13 @@
+[Unit]
+Description=A simple utility that switches your wallpaper around once in a while
+After=graphical.target
+Wants=graphical.target
+
+[Service]
+ExecStart=/usr/local/bin/wicher /home/ivanm/Pictures/36views/ 300 normal
+User=ivanm
+Environment=DISPLAY=:0
+Restart=always
+
+[Install]
+WantedBy=graphical.target
