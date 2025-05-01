@@ -4,6 +4,9 @@
 #include <string.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <sys/wait.h>
+#include <signal.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #define MAX_FILES 256
@@ -15,7 +18,22 @@ void set_wallpaper(const char path[], int dpy) {
     static char buffer[256];
     memset(buffer, 0, sizeof(buffer));
     sprintf(buffer, "nitrogen --head=%d --set-zoom-fill \"%s\"", dpy, path);
-    system(buffer);
+
+    pid_t pid = fork();
+    if (pid < 0) {
+        perror("fork failed\n");
+        exit(EXIT_FAILURE);
+    } else if (pid == 0) {
+        execl("/bin/sh", "sh", "-c", buffer, (char*)NULL);
+        perror("execl failed\n");
+        exit(EXIT_FAILURE);
+    } else {
+        int status;
+        if (waitpid(pid, &status, 0) < 0) {
+            perror("waitpid failed\n");
+            exit(EXIT_FAILURE);
+        }
+    }
 }
 
 bool setup(char directory[]) {
@@ -65,6 +83,8 @@ bool setup(char directory[]) {
         return false;
     }
 
+    filepath_index = rand() % filepath_count;
+
     return true;
 }
 
@@ -84,7 +104,7 @@ int schedule(int delay_seconds) {
 
         fp = popen(cmd, "r");
         if (fp == NULL) {
-            printf("popen failed\n");
+            perror("popen failed\n");
             return EXIT_FAILURE;
         }
 
@@ -92,6 +112,8 @@ int schedule(int delay_seconds) {
             monitor_count = atoi(buffer);
             monitor_count -= 1;
         }
+
+        pclose(fp);
 
         for (int monitor=0; monitor < monitor_count; monitor++) {
             set_wallpaper(filepaths[filepath_index], monitor);
@@ -113,11 +135,17 @@ int main(int argc, char* argv[]) {
         return EXIT_FAILURE;
     }
 
+    atexit(cleanup);
+
+    if (daemon(0, 0) == -1) {
+        perror("daemon failed\n");
+        exit(EXIT_FAILURE);
+    }
+
     int delay;
     delay = atoi(argv[2]);
 
     schedule(delay);
 
-    cleanup();
     return EXIT_SUCCESS;
 }
