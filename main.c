@@ -4,8 +4,8 @@
 #include <string.h>
 #include <dirent.h>
 #include <stdlib.h>
+#include <time.h>
 #include <sys/wait.h>
-#include <signal.h>
 #include <sys/types.h>
 #include <unistd.h>
 
@@ -83,6 +83,7 @@ bool setup(char directory[]) {
         return false;
     }
 
+    srand(time(NULL));
     filepath_index = rand() % filepath_count;
 
     return true;
